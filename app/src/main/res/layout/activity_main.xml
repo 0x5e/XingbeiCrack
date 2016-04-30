@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context="com.xingbei.crack.xingbeicrack.MainActivity"
+    android:clickable="false">
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/keyData"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentEnd="true"
+        android:editable="true"
+        android:enabled="true"
+        android:focusable="true"
+        android:hint="keyData"
+        android:padding="15dp"
+        android:text="4bmymHTNhFVXjyPjUnZHp6VEUpEuipkXp++jMbK2En0=" />
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/userPhoneNo"
+        android:hint="userPhoneNo"
+        android:enabled="true"
+        android:focusable="true"
+        android:editable="true"
+        android:layout_alignStart="@+id/keyData"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentStart="true"
+        android:padding="15dp"
+        android:layout_below="@+id/keyData"
+        android:text="4511a24bf3b6ea760f79f642743b94363ddc5c3c" />
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/systemTime"
+        android:layout_below="@+id/userPhoneNo"
+        android:layout_alignParentStart="true"
+        android:enabled="true"
+        android:editable="true"
+        android:layout_alignParentEnd="true"
+        android:padding="15dp"
+        android:hint="systemTime"
+        android:text="2016-04-30 15:41:38 6" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Decrypt"
+        android:id="@+id/button"
+        android:layout_below="@+id/systemTime"
+        android:layout_alignParentStart="true"
+        android:padding="15dp"
+        android:layout_alignParentEnd="true"
+        android:clickable="true"
+        android:onClick="onClick" />
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/result"
+        android:layout_below="@+id/button"
+        android:layout_alignParentStart="true"
+        android:padding="15dp"
+        android:editable="true"
+        android:enabled="true"
+        android:layout_alignParentEnd="true"
+        android:hint="Result" />
+</RelativeLayout>
