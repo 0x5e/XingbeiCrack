@@ -38,7 +38,7 @@ def main():
 		sys.stdout.flush()
 
 		response = login(phone, code)
-		if response.json['errorcode'] == 0 or response.json()['errorcode'] == 4:
+		if response.json()['errorcode'] == 0 or response.json()['errorcode'] == 4:
 			print('\n登录成功: \n')
 			print(response.text)
 			break
