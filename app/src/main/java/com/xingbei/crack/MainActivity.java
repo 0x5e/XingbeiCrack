@@ -25,8 +25,8 @@ public class MainActivity extends ActionBarActivity {
 
     public void onClick(View view) {
         //String mac, String name, int areaid, String channel, int flag
-        //只用到了flag
-        AdvEntity advEntity = new AdvEntity("00:00:00:00:00:00", "LF", 123456, "左入口", 0);
+        //AdvEntity advEntity = new AdvEntity("00:00:00:00:00:00", "LF", 123456, "左入口", 0);
+        byte advFlag = 0;
         String keyData = ((EditText)this.findViewById(R.id.keyData)).getText().toString();
         String systemTime = ((EditText)this.findViewById(R.id.systemTime)).getText().toString();
         String userPhoneNo = ((EditText)this.findViewById(R.id.userPhoneNo)).getText().toString();
@@ -45,7 +45,7 @@ public class MainActivity extends ActionBarActivity {
         }
         AESUtil aesUtil = new AESUtil(bArr2); //以当前年月日为参数,转换为秘钥,生成AESUtil
 
-        ArrayList<byte[]> arrayList = KeyDataUtil.decryptKeyData(keyData, aesUtil, advEntity, userPhoneNo, systemTime);
+        ArrayList<byte[]> arrayList = KeyDataUtil.decryptKeyData(keyData, aesUtil, advFlag, userPhoneNo, systemTime);
 
         ArrayList<String> strList = new ArrayList<String>();
         for (byte[] item: arrayList) {

@@ -4,6 +4,7 @@
 import sys
 import requests
 import json
+import codecs
 
 BASE_URL = 'http://chargerest.park1.cn/BackgroundApp1'
 
@@ -100,8 +101,30 @@ def park(flag):
 		if len(response.text) > 0:
 			print(json.dumps(response.json(), ensure_ascii=False, indent=2))
 
+# 找车位
+def fetchByBox():
+	#左下
+	lat1 = 31
+	lon1 = 121
+	#右上
+	lat2 = 30
+	lon2 = 120
+
+	response = requests.post(
+		url = 'http://chargerest.park1.cn/BackgroundAppExtend/parkingLocation/V1_1/fetchByBox.do',
+		data = '{"upperRightLongitude": %f, "upperRightLatitude": %f, "lowerLeftLongitude": %f, "lowerLeftLatitude": %f}' % (lon1, lat1, lon2, lat2)
+	)
+
+	if len(response.text) > 0:
+		result = json.dumps(response.json(), ensure_ascii=False, indent=2)
+		print (result)
+
+		f = codecs.open('fetchByBox.json', 'w+b', 'UTF-8')
+		f.write(result)
+		f.close()
+
 def main():
-	print('1.任意手机号登录\n2.伪造入场记录\n3.伪造出场记录')
+	print('1.任意手机号登录\n2.伪造入场记录\n3.伪造出场记录\n4.找车位')
 	number = input('请选择: ')
 	if number == 1:
 		login()
@@ -109,6 +132,8 @@ def main():
 		park(0)
 	elif number == 3:
 		park(1)
+	elif number == 4:
+		fetchByBox()
 
 if __name__ == '__main__':
 	main()

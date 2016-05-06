@@ -13,10 +13,11 @@ public class KeyDataUtil {
 
 
     // m51a
-    public static ArrayList<byte[]> decryptKeyData(String keyData, AESUtil aesUtil, AdvEntity advEntity, String userPhoneNo, String systemTime) {
-//        System.out.println(new StringBuilder("systemTime=").append(systemTime));
+    public static ArrayList<byte[]> decryptKeyData(String keyData, AESUtil aesUtil, byte advFlag, String userPhoneNo, String systemTime) {
+        ArrayList<byte[]> arrayList = new ArrayList();
 
         //时间格式转换,"2016-04-30 11:11:07 6"转为[20,16,4,30,11,11,7,6]
+        //最后一个数字是星期几
         String[] split = systemTime.split(" ");
         int parseInt = Integer.parseInt(split[0].split("-")[0]);
         int parseInt2 = Integer.parseInt(split[0].split("-")[1]);
@@ -25,53 +26,55 @@ public class KeyDataUtil {
         int parseInt5 = Integer.parseInt(split[1].split(":")[1]);
         int parseInt6 = Integer.parseInt(split[1].split(":")[2]);
         int parseInt7 = Integer.parseInt(split[2]);
-        byte[] bArr = new byte[]{(byte) (parseInt / 100), (byte) (parseInt % 100), (byte) parseInt2, (byte) parseInt3, (byte) parseInt4, (byte) parseInt5, (byte) parseInt6, (byte) parseInt7};
-        if (bArr[7] == (byte) 0) {
-            bArr[7] = (byte) 7;
+        byte[] timeArray = new byte[]{(byte) (parseInt / 100), (byte) (parseInt % 100), (byte) parseInt2, (byte) parseInt3, (byte) parseInt4, (byte) parseInt5, (byte) parseInt6, (byte) parseInt7};
+        if (timeArray[7] == (byte) 0) {
+            timeArray[7] = (byte) 7;
         }
 
         //将md5(userPhoneNo)作为aes秘钥,解密经Base64编码过的keyData
         byte[] bMd5UserPhoneNo = KeyDataUtil.md5(userPhoneNo.getBytes());
         byte[] bKeyData = Base64.decode(keyData, 0);
-        byte[] result = new AESUtil(bMd5UserPhoneNo).decode(bKeyData);
+        byte[] bDecodedData = new AESUtil(bMd5UserPhoneNo).decode(bKeyData);
 
+        //result完整性校验
         byte[] obj = new byte[23];
-        System.arraycopy(result, 0, obj, 0, 14);
-        System.arraycopy(result, 16, obj, 14, 9);
+        System.arraycopy(bDecodedData, 0, obj, 0, 14);
+        System.arraycopy(bDecodedData, 16, obj, 14, 9);
         byte[] obj2 = new byte[21];
         System.arraycopy(obj, 0, obj2, 0, 21);
         byte[] a = KeyDataUtil.m67a(KeyDataUtil.m8777a(obj2));
-        if (a[2] == obj[21] && a[3] == obj[22]) {
-            result = new byte[16];
-            System.arraycopy(obj2, 0, result, 0, 16);
-        } else {
-            result = null;
+        if (a[2] != obj[21] || a[3] != obj[22]) {
+            return arrayList;
         }
-        byte[] bArr2 = new byte[(result.length + 10)];
-        bArr2[0] = (byte) result.length;
-        for (parseInt = 0; parseInt < result.length; parseInt++) {
-            bArr2[parseInt + 1] = result[parseInt];
-        }
-        bArr2[result.length + 1] = (byte) advEntity.getFlag();
-        for (parseInt = 0; parseInt < 8; parseInt++) {
-            bArr2[(result.length + 2) + parseInt] = bArr[parseInt];
-        }
-        ArrayList<byte[]> arrayList = new ArrayList();
-        parseInt5 = bArr2.length;
-        parseInt = parseInt5 / 14;
-        parseInt3 = parseInt5 % 14;
-        if (parseInt == 0) {
+
+        //截取[0,14),[16,18)并拼接
+        byte[] data = new byte[16];
+        System.arraycopy(bDecodedData, 0, data, 0, 14);
+        System.arraycopy(bDecodedData, 16, data, 14, 2);
+
+        //组成新数组(dataLen,data,advFlag,timeArray)
+        byte[] bArr = new byte[(1 + data.length + 1 + timeArray.length)];
+        bArr[0] = (byte) data.length;
+        System.arraycopy(data, 0, bArr, 1, data.length);
+        bArr[data.length + 1] = advFlag;
+        System.arraycopy(timeArray, 0, bArr, data.length + 2, timeArray.length);
+
+
+        int bArrLen = bArr.length;
+        int bArrlenH = bArrLen / 14;
+        int bArrlenL = bArrLen % 14;
+        if (bArrlenH == 0) {
             obj = new byte[20];
             obj[0] = (byte) 1;
             obj[1] = (byte) 3;
             obj[2] = (byte) 20;
-            byte[] bArr3 = new byte[parseInt5];
-            for (parseInt7 = 0; parseInt7 < parseInt5; parseInt7++) {
-                bArr3[parseInt7] = bArr2[parseInt7];
+            byte[] bArr3 = new byte[bArrLen];
+            for (int i = 0; i < bArrLen; i++) {
+                bArr3[i] = bArr[i];
             }
-            bArr3 = KeyDataUtil.m69a(bArr3, aesUtil);
-            for (parseInt7 = 0; parseInt7 < bArr3.length; parseInt7++) {
-                obj[parseInt7 + 3] = bArr3[parseInt7];
+            bArr3 = KeyDataUtil.sumAes(bArr3, aesUtil);
+            for (int i = 0; i < bArr3.length; i++) {
+                obj[i + 3] = bArr3[i];
             }
             obj[19] = KeyDataUtil.sum(obj);
             arrayList.add(obj);
@@ -82,45 +85,45 @@ public class KeyDataUtil {
         obj3[0] = (byte) 1;
         obj3[1] = (byte) 1;
         obj3[2] = (byte) 20;
-        bArr = new byte[14];
-        for (parseInt7 = 0; parseInt7 < 14; parseInt7++) {
-            bArr[parseInt7] = bArr2[parseInt7];
+        timeArray = new byte[14];
+        for (int i = 0; i < 14; i++) {
+            timeArray[i] = bArr[i];
         }
-        bArr = KeyDataUtil.m69a(bArr, aesUtil);
-        for (parseInt7 = 0; parseInt7 < bArr.length; parseInt7++) {
-            obj3[parseInt7 + 3] = bArr[parseInt7];
+        timeArray = KeyDataUtil.sumAes(timeArray, aesUtil);
+        for (int i = 0; i < timeArray.length; i++) {
+            obj3[i + 3] = timeArray[i];
         }
         obj3[19] = KeyDataUtil.sum(obj3);
         arrayList.add(obj3);
-        parseInt7 = parseInt3 == 0 ? parseInt - 1 : parseInt;
-        for (parseInt3 = 1; parseInt3 < parseInt7; parseInt3++) {
-            obj3 = new byte[20];
-            obj3[0] = (byte) 1;
-            obj3[1] = (byte) 0;
-            obj3[2] = (byte) 20;
+        parseInt7 = bArrlenL == 0 ? bArrlenH - 1 : bArrlenH;
+        for (int i = 1; i < parseInt7; i++) {
+            obj = new byte[20];
+            obj[0] = (byte) 1;
+            obj[1] = (byte) 0;
+            obj[2] = (byte) 20;
             byte[] bArr4 = new byte[14];
-            for (parseInt = 0; parseInt < 14; parseInt++) {
-                bArr4[parseInt] = bArr2[(parseInt3 * 14) + parseInt];
+            for (int j = 0; j < 14; j++) {
+                bArr4[j] = bArr[(bArrlenL * 14) + j];
             }
-            bArr4 = KeyDataUtil.m69a(bArr4, aesUtil);
-            for (parseInt = 0; parseInt < bArr.length; parseInt++) {
-                obj3[parseInt + 3] = bArr4[parseInt];
+            bArr4 = KeyDataUtil.sumAes(bArr4, aesUtil);
+            for (int j = 0; i < timeArray.length; j++) {
+                obj[j + 3] = bArr4[j];
             }
-            obj3[19] = KeyDataUtil.sum(obj3);
-            arrayList.add(obj3);
+            obj[19] = KeyDataUtil.sum(obj);
+            arrayList.add(obj);
         }
-        parseInt = parseInt5 - (parseInt7 * 14);
+        parseInt = bArrLen - (parseInt7 * 14);
         byte[] obj4 = new byte[20];
         obj4[0] = (byte) 1;
         obj4[1] = (byte) 2;
         obj4[2] = (byte) 20;
         byte[] bArr5 = new byte[parseInt];
-        for (parseInt7 = 0; parseInt7 < parseInt; parseInt7++) {
-            bArr5[parseInt7] = bArr2[(parseInt5 - parseInt) + parseInt7];
+        for (int i = 0; i < parseInt; i++) {
+            bArr5[i] = bArr[(bArrLen - parseInt) + i];
         }
-        byte[] a2 = KeyDataUtil.m69a(bArr5, aesUtil);
-        for (parseInt7 = 0; parseInt7 < a2.length; parseInt7++) {
-            obj4[parseInt7 + 3] = a2[parseInt7];
+        byte[] a2 = KeyDataUtil.sumAes(bArr5, aesUtil);
+        for (int i = 0; i < a2.length; i++) {
+            obj4[i + 3] = a2[i];
         }
         obj4[19] = KeyDataUtil.sum(obj4);
         arrayList.add(obj4);
@@ -129,23 +132,21 @@ public class KeyDataUtil {
 
     public static byte[] m67a(int i) {
         byte[] bArr = new byte[4];
-        for (int i2 = 0; i2 < 4; i2++) {
-            bArr[i2] = (byte) (i >> ((3 - i2) * 8));
+        for (int j = 0; j < 4; j++) {
+            bArr[j] = (byte) (i >> ((3 - j) * 8));
         }
         return bArr;
     }
 
-    public static byte[] m69a(byte[] bArr, AESUtil AESUtil) {
-        int i = 0;
+    public static byte[] sumAes(byte[] bArr, AESUtil aesUtil) {
         byte[] bArr2 = new byte[(bArr.length + 1)];
         byte b = (byte) 0;
-        while (i < bArr.length) {
+        for (int i = 0; i < bArr.length; i++) {
             bArr2[i] = bArr[i];
             b = (byte) (b + bArr[i]);
-            i++;
         }
         bArr2[bArr.length] = b;
-        return AESUtil.encode(bArr2);
+        return aesUtil.encode(bArr2);
     }
 
     // m80b
